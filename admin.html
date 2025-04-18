@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>لوحة تحكم النخل</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      direction: rtl;
+    }
+  </style>
+</head>
+<body class="bg-gray-50 p-6">
+  <h1 class="text-3xl font-bold text-green-700 mb-6 text-center">لوحة تحكم النخل 🌴</h1>
+
+  <div class="overflow-x-auto bg-white rounded-xl shadow p-4">
+    <table class="min-w-full text-sm text-right">
+      <thead class="bg-green-100 text-green-800">
+        <tr>
+          <th class="p-2">رقم النخلة</th>
+          <th class="p-2">رقم الخط</th>
+          <th class="p-2">رقم الحوشة</th>
+          <th class="p-2">النوع</th>
+          <th class="p-2">الحالة</th>
+        </tr>
+      </thead>
+      <tbody id="table-body" class="text-gray-700">
+        <tr><td colspan="5" class="text-center p-4">جاري التحميل...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    async function loadAllTrees() {
+      try {
+        const response = await fetch('trees.json');
+        const data = await response.json();
+
+        const tbody = document.getElementById('table-body');
+        tbody.innerHTML = '';
+
+        Object.entries(data).forEach(([id, tree]) => {
+          const row = `
+            <tr class="border-b">
+              <td class="p-2 font-semibold">${id}</td>
+              <td class="p-2">${tree.line}</td>
+              <td class="p-2">${tree.field}</td>
+              <td class="p-2">${tree.type}</td>
+              <td class="p-2">${tree.infected ? 'مصابة ❌' : 'غير مصابة ✅'}</td>
+            </tr>
+          `;
+          tbody.innerHTML += row;
+        });
+      } catch (error) {
+        document.getElementById('table-body').innerHTML = '<tr><td colspan="5" class="text-red-600 text-center p-4">فشل في تحميل البيانات.</td></tr>';
+      }
+    }
+
+    loadAllTrees();
+  </script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+{
+  "101": {
+    "line": 7,
+    "field": "A1",
+    "type": "برحي",
+    "infected": false
+  },
+  "102": {
+    "line": 8,
+    "field": "B2",
+    "type": "سكري",
+    "infected": true
+  },
+  "103": {
+    "line": 9,
+    "field": "C3",
+    "type": "خلاص",
+    "infected": false
+  }
+}
