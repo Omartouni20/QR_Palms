@@ -3,48 +3,143 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>تفاصيل النخلة</title>
+  <title>تفاصيل النخلة | Palm Tree Details</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body {
-      direction: rtl;
+      font-family: 'Cairo', sans-serif;
+      transition: background 0.3s, color 0.3s;
+    }
+    .dark-mode {
+      background-color: #0f172a;
+      color: #f1f5f9;
+    }
+    .light-mode {
+      background-color: #ffffff;
+      color: #0f172a;
+    }
+    .dark-mode header, .dark-mode main {
+      background-color: #0f172a !important;
+    }
+    .light-mode header, .light-mode main {
+      background-color: #ffffff !important;
     }
   </style>
 </head>
-<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
-  <div id="content" class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md text-right">
-    <h1 class="text-2xl font-bold text-green-700 mb-4">تفاصيل النخلة 🌴</h1>
-    <div id="tree-details" class="space-y-2 text-gray-700">
-      <p>جاري التحميل...</p>
+<body class="min-h-screen light-mode" dir="rtl" id="body">
+  <!-- Navbar -->
+  <header class="shadow-md py-4 px-6 flex justify-between items-center">
+    <div class="flex items-center space-x-4 space-x-reverse">
+      <img src="./WhatsApp Image 2024-04-18 at 12.25.39.jpeg" alt="شعار الهناء" class="w-12 h-12 rounded-full border border-green-500">
+      <div>
+        <h1 class="text-xl font-bold text-green-700 dark:text-yellow-400" id="company-name">الهناء للتنمية الزراعية</h1>
+        <p class="text-sm text-gray-500 dark:text-gray-300" id="company-desc">AL HANAA For Agricultural Development</p>
+      </div>
     </div>
-  </div>
+    <div class="flex gap-4 items-center">
+      <select onchange="switchLanguage(this.value)" class="border px-2 py-1 rounded text-green-700 dark:text-yellow-300 bg-white dark:bg-gray-700">
+        <option value="ar">العربية</option>
+        <option value="en">English</option>
+      </select>
+      <button onclick="toggleDarkMode()" id="modeToggle" class="text-green-600 font-semibold hover:text-green-800 dark:text-yellow-400 dark:hover:text-yellow-300 text-xl">🌙</button>
+    </div>
+  </header>
+
+  <!-- Page Content -->
+  <main class="flex items-center justify-center p-6">
+    <div id="content" class="rounded-2xl shadow-xl p-8 w-full max-w-lg text-right mt-10">
+      <h2 id="page-title" class="text-3xl font-bold text-green-700 dark:text-yellow-300 mb-6 text-center">تفاصيل النخلة 🌴</h2>
+      <div id="tree-details" class="space-y-4 text-lg">
+        <p>جاري التحميل...</p>
+      </div>
+    </div>
+  </main>
 
   <script>
+    let lang = 'ar';
+    let isDark = false;
+
     const urlParams = new URLSearchParams(window.location.search);
     const treeId = urlParams.get('id');
+
+    const translations = {
+      ar: {
+        title: 'تفاصيل النخلة 🌴',
+        loading: 'جاري التحميل...',
+        notFound: 'لم يتم العثور على بيانات لهذه النخلة.',
+        error: 'حدث خطأ في تحميل البيانات.',
+        id: 'رقم النخلة',
+        line: 'رقم الخط',
+        field: 'رقم الحوشة',
+        type: 'النوع',
+        status: 'الحالة',
+        infected: 'مصابة ❌',
+        healthy: 'غير مصابة ✅',
+        companyName: 'الهناء للتنمية الزراعية',
+        companyDesc: 'AL HANAA For Agricultural Development'
+      },
+      en: {
+        title: 'Palm Tree Details 🌴',
+        loading: 'Loading...',
+        notFound: 'No data found for this palm tree.',
+        error: 'An error occurred while loading data.',
+        id: 'Tree ID',
+        line: 'Line Number',
+        field: 'Field',
+        type: 'Type',
+        status: 'Status',
+        infected: 'Infected ❌',
+        healthy: 'Healthy ✅',
+        companyName: 'Al Hanaa Agricultural Dev.',
+        companyDesc: 'Elmorshedy farms'
+      }
+    };
 
     async function fetchTreeData() {
       try {
         const response = await fetch('trees.json');
         const data = await response.json();
-
         const tree = data[treeId];
         const container = document.getElementById('tree-details');
 
         if (tree) {
           container.innerHTML = `
-            <p><strong>رقم النخلة:</strong> ${treeId}</p>
-            <p><strong>رقم الخط:</strong> ${tree.line}</p>
-            <p><strong>رقم الحوشة:</strong> ${tree.field}</p>
-            <p><strong>النوع:</strong> ${tree.type}</p>
-            <p><strong>الحالة:</strong> ${tree.infected ? 'مصابة ❌' : 'غير مصابة ✅'}</p>
+            <p><strong>${t('id')}:</strong> ${treeId}</p>
+            <p><strong>${t('line')}:</strong> ${tree.line}</p>
+            <p><strong>${t('field')}:</strong> ${tree.field}</p>
+            <p><strong>${t('type')}:</strong> ${tree.type}</p>
+            <p><strong>${t('status')}:</strong> ${tree.infected ? t('infected') : t('healthy')}</p>
           `;
         } else {
-          container.innerHTML = '<p class="text-red-600">لم يتم العثور على بيانات لهذه النخلة.</p>';
+          container.innerHTML = `<p class="text-red-600">${t('notFound')}</p>`;
         }
       } catch (error) {
-        document.getElementById('tree-details').innerHTML = '<p class="text-red-600">حدث خطأ في تحميل البيانات.</p>';
+        document.getElementById('tree-details').innerHTML = `<p class="text-red-600">${t('error')}</p>`;
       }
+    }
+
+    function toggleDarkMode() {
+      const body = document.getElementById('body');
+      isDark = !isDark;
+      body.classList.toggle('dark-mode', isDark);
+      body.classList.toggle('light-mode', !isDark);
+      document.getElementById('modeToggle').innerText = isDark ? '☀️' : '🌙';
+    }
+
+    function t(key) {
+      return translations[lang][key];
+    }
+
+    function switchLanguage(selectedLang) {
+      lang = selectedLang;
+      document.documentElement.lang = lang;
+      document.body.dir = lang === 'ar' ? 'rtl' : 'ltr';
+
+      document.getElementById('company-name').innerText = t('companyName');
+      document.getElementById('company-desc').innerText = t('companyDesc');
+      document.getElementById('page-title').innerText = t('title');
+
+      fetchTreeData();
     }
 
     fetchTreeData();
