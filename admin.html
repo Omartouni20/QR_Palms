@@ -55,6 +55,20 @@
     .dark-mode main {
       background-color: #0f172a !important;
     }
+    /* Loading Spinner */
+    .spinner {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #3498db;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 2s linear infinite;
+      margin: auto;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
   </style>
 </head>
 <body class="min-h-screen transition-colors duration-300 light-mode" dir="rtl" id="body">
@@ -85,21 +99,25 @@
       <input type="text" id="searchInput" oninput="filterTrees()" placeholder="🔍 ابحث برقم أو نوع أو حالة..." class="px-4 py-2 rounded border w-full sm:w-1/3">
     </div>
 
+    <!-- Loading Spinner -->
+    <div id="loading" class="flex justify-center mb-6">
+      <div class="spinner"></div>
+    </div>
+
     <div class="overflow-x-auto rounded-xl shadow p-4">
       <table class="min-w-full text-sm text-right">
-        <thead>
-          <tr>
-            <th class="p-2" id="col-id">رقم النخلة</th>
-            <th class="p-2" id="col-line">رقم الخط</th>
-            <th class="p-2" id="col-field">رقم الحوشة</th>
-            <th class="p-2" id="col-type">النوع</th>
-            <th class="p-2" id="col-status">الحالة</th>
-          </tr>
+        <thead id="table-header">
+          <!-- Headers will be dynamically inserted here -->
         </thead>
         <tbody id="table-body" class="text-gray-700 dark:text-gray-200">
-          <tr><td colspan="5" class="text-center p-4">جاري التحميل...</td></tr>
+          <!-- Data rows will be inserted here -->
         </tbody>
       </table>
+    </div>
+
+    <!-- Download All QR Codes Button -->
+    <div class="flex justify-center mt-6">
+      <button id="download-all" onclick="downloadAllQRCodes()" class="bg-green-600 text-white px-4 py-2 rounded-lg">تحميل جميع أكواد QR</button>
     </div>
   </main>
 
@@ -116,44 +134,80 @@
         allData = data;
         currentData = data;
         renderTable(data);
+        document.getElementById('loading').style.display = 'none'; // Hide loading spinner once data is loaded
       } catch (error) {
-        document.getElementById('table-body').innerHTML = `<tr><td colspan="5" class="text-red-600 text-center p-4">${lang === 'ar' ? 'فشل في تحميل البيانات.' : 'Failed to load data.'}</td></tr>`;
+        document.getElementById('table-body').innerHTML = `<tr><td colspan="7" class="text-red-600 text-center p-4">${lang === 'ar' ? 'فشل في تحميل البيانات.' : 'Failed to load data.'}</td></tr>`;
       }
     }
 
-    function translateType(type) {
-      const types = {
-        'برحي': { ar: 'برحي', en: 'Barhi' },
-        'سكري': { ar: 'سكري', en: 'Sukkari' },
-        'مجهول': { ar: 'مجهول', en: 'Unknown' },
-      };
-      return types[type] ? types[type][lang] : (lang === 'en' ? 'Unknown' : type);
+    function generateQRCode(id) {
+      const qrCodeURL = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(id)}&size=100x100`;
+      return qrCodeURL;
     }
 
     function renderTable(data) {
       const tbody = document.getElementById('table-body');
+      const thead = document.getElementById('table-header');
       tbody.innerHTML = '';
-      const entries = Object.entries(data);
+      thead.innerHTML = '';
 
-      if (!entries.length) {
-        tbody.innerHTML = `<tr><td colspan="5" class="text-red-600 text-center p-4">${lang === 'ar' ? 'لا توجد بيانات مطابقة.' : 'No matching data found.'}</td></tr>`;
+      if (!Object.keys(data).length) {
+        tbody.innerHTML = `<tr><td colspan="7" class="text-red-600 text-center p-4">${lang === 'ar' ? 'لا توجد بيانات مطابقة.' : 'No matching data found.'}</td></tr>`;
         return;
       }
 
-      entries.forEach(([id, tree]) => {
-        const statusText = tree.infected ? (lang === 'ar' ? 'مصابة ❌' : 'Infected ❌') : (lang === 'ar' ? 'غير مصابة ✅' : 'Healthy ✅');
-        const typeText = translateType(tree.type);
+      // Create table header dynamically
+      const firstRow = Object.values(data)[0]; // Get the first object to get the keys
+      const headerRow = Object.keys(firstRow).map(key => `<th class="p-2">${key}</th>`).join('');
+      thead.innerHTML = `<tr>${headerRow}<th class="p-2">QR Code</th><th class="p-2">تحميل QR</th></tr>`;
+
+      // Create table rows dynamically
+      Object.entries(data).forEach(([id, tree]) => {
+        const qrCodeURL = generateQRCode(id);
         const row = `
           <tr class="border-b border-gray-200 dark:border-gray-700">
-            <td class="p-2 font-semibold">${id}</td>
-            <td class="p-2">${tree.line}</td>
-            <td class="p-2">${tree.field}</td>
-            <td class="p-2">${typeText}</td>
-            <td class="p-2">${statusText}</td>
+            ${Object.values(tree).map(value => `<td class="p-2">${value ?? '—'}</td>`).join('')}
+            <td class="p-2"><img src="${qrCodeURL}" alt="QR Code" class="w-16 h-16 rounded"></td>
+            <td class="p-2">
+              <button onclick="downloadQRCode('${id}')" class="bg-blue-600 text-white px-4 py-2 rounded-lg">تحميل QR</button>
+              <div id="qr-details-${id}" class="mt-2 hidden text-sm text-gray-700 dark:text-gray-300">
+                <p><strong>ID:</strong> ${tree.id}</p>
+                <p><strong>Line:</strong> ${tree.line}</p>
+                <p><strong>Field:</strong> ${tree.field}</p>
+                <p><strong>Type:</strong> ${tree.type}</p>
+                <p><strong>Infected:</strong> ${tree.infected ? 'نعم' : 'لا'}</p>
+              </div>
+            </td>
           </tr>
         `;
         tbody.innerHTML += row;
       });
+    }
+
+    function downloadQRCode(id) {
+      const qrCodeURL = generateQRCode(id);
+      const a = document.createElement('a');
+      a.href = qrCodeURL;
+      a.download = `${id}-QRCode.png`;
+      a.click();
+      
+      // Show tree details under QR code
+      const detailsDiv = document.getElementById(`qr-details-${id}`);
+      detailsDiv.classList.toggle('hidden');
+    }
+
+    function downloadAllQRCodes() {
+      Object.keys(allData).forEach(id => {
+        downloadQRCode(id);
+      });
+    }
+
+    function switchLanguage(selectedLang) {
+      lang = selectedLang;
+      document.documentElement.lang = lang;
+      document.body.dir = lang === 'ar' ? 'rtl' : 'ltr';
+
+      renderTable(currentData);
     }
 
     function toggleDarkMode() {
@@ -164,34 +218,11 @@
       document.getElementById('modeToggle').innerText = isDark ? '☀️' : '🌙';
     }
 
-    function switchLanguage(selectedLang) {
-      lang = selectedLang;
-      document.documentElement.lang = lang;
-      document.body.dir = lang === 'ar' ? 'rtl' : 'ltr';
-
-      document.getElementById('company-name').innerText = lang === 'ar' ? 'الهناء للتنمية الزراعية' : 'Al Hanaa Agricultural Dev.';
-      document.getElementById('company-desc').innerText = lang === 'ar' ? 'AL HANAA For Agricultural Development' : 'Grow with care and science';
-      document.getElementById('page-title').innerText = lang === 'ar' ? 'لوحة تحكم النخل 🌴' : 'Palm Tree Dashboard 🌴';
-      document.getElementById('col-id').innerText = lang === 'ar' ? 'رقم النخلة' : 'Tree ID';
-      document.getElementById('col-line').innerText = lang === 'ar' ? 'رقم الخط' : 'Line Number';
-      document.getElementById('col-field').innerText = lang === 'ar' ? 'رقم الحوشة' : 'Field';
-      document.getElementById('col-type').innerText = lang === 'ar' ? 'النوع' : 'Type';
-      document.getElementById('col-status').innerText = lang === 'ar' ? 'الحالة' : 'Status';
-
-      document.getElementById('searchInput').placeholder = lang === 'ar' ? '🔍 ابحث برقم أو نوع أو حالة...' : '🔍 Search by ID, type, or status...';
-
-      renderTable(currentData);
-    }
-
     function filterTrees() {
       const search = document.getElementById('searchInput').value.trim().toLowerCase();
       const filtered = Object.fromEntries(Object.entries(allData).filter(([id, tree]) => {
-        const statusText = tree.infected ? (lang === 'ar' ? 'مصابة' : 'infected') : (lang === 'ar' ? 'غير مصابة' : 'healthy');
         return id.includes(search) ||
-          (tree.line + '').includes(search) ||
-          (tree.field + '').includes(search) ||
-          tree.type.toLowerCase().includes(search) ||
-          statusText.includes(search);
+          Object.values(tree).some(value => value.toString().toLowerCase().includes(search));
       }));
       currentData = filtered;
       renderTable(filtered);
