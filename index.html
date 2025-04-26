@@ -18,16 +18,34 @@
       background-color: #ffffff;
       color: #0f172a;
     }
-    .dark-mode header, .dark-mode main {
-      background-color: #0f172a !important;
+    .table-cell:hover {
+      background-color: #facc15;
+      color: #000;
+      transition: all 0.3s ease;
     }
-    .light-mode header, .light-mode main {
-      background-color: #ffffff !important;
+    .field-label {
+      font-weight: bold;
+    }
+    .status-healthy {
+      color: green;
+      font-weight: bold;
+    }
+    .status-infected {
+      color: red;
+      font-weight: bold;
+    }
+    .status-testing {
+      color: orange;
+      font-weight: bold;
+    }
+    table {
+      border: 2px solid #ccc;
+      border-radius: 10px;
+      overflow: hidden;
     }
   </style>
 </head>
 <body class="min-h-screen light-mode" dir="rtl" id="body">
-  <!-- Navbar -->
   <header class="shadow-md py-4 px-6 flex justify-between items-center">
     <div class="flex items-center space-x-4 space-x-reverse">
       <img src="./WhatsApp Image 2024-04-18 at 12.25.39.jpeg" alt="شعار الهناء" class="w-12 h-12 rounded-full border border-green-500">
@@ -45,12 +63,14 @@
     </div>
   </header>
 
-  <!-- Page Content -->
   <main class="flex items-center justify-center p-6">
-    <div id="content" class="rounded-2xl shadow-xl p-8 w-full max-w-lg text-right mt-10">
+    <div id="content" class="rounded-2xl shadow-xl p-8 w-full md:w-2/3 text-right mt-10">
       <h2 id="page-title" class="text-3xl font-bold text-green-700 dark:text-yellow-300 mb-6 text-center">تفاصيل النخلة 🌴</h2>
-      <div id="tree-details" class="space-y-4 text-lg">
-        <p>جاري التحميل...</p>
+      <div id="tree-details" class="overflow-x-auto">
+        <table class="table-auto w-full text-right bg-white dark:bg-gray-800 rounded-xl shadow-lg">
+          <tbody id="tree-table" class="text-lg">
+          </tbody>
+        </table>
       </div>
     </div>
   </main>
@@ -59,62 +79,75 @@
     let lang = 'ar';
     let isDark = false;
 
+    const translations = {
+      "محبس": "Valve",
+      "خط": "Line",
+      "نخلة": "Palm Tree",
+      "الصنف/تاريخ الزراعة": "Type/Planting Date",
+      "حالة العقد 2018": "Contract Status 2018",
+      "حالة العقد 2019": "Contract Status 2019",
+      "حالة العقد 2020": "Contract Status 2020",
+      "حالة العقد 2021": "Contract Status 2021",
+      "حالة العقد 2022": "Contract Status 2022",
+      "حالة العقد 2023": "Contract Status 2023",
+      "ملاحظات 2020": "Notes 2020",
+      "ملاحظات 2021": "Notes 2021",
+      "ملاحظات 2022": "Notes 2022",
+      "ملاحظات 2023": "Notes 2023",
+      "تحت الاختبار": "Under Testing",
+      "مصابة بالسوسة": "Infected with Weevil",
+      "مصابة بالسوسة ": "Infected with Weevil"
+    };
+
+    const statusClasses = {
+      "تحت الاختبار": "status-testing",
+      "Under Testing": "status-testing",
+      "مصابة بالسوسة ": "status-infected",
+      "Infected with Weevil": "status-infected"
+    };
+
     const urlParams = new URLSearchParams(window.location.search);
     const treeId = urlParams.get('id');
-
-    const translations = {
-      ar: {
-        title: 'تفاصيل النخلة 🌴',
-        loading: 'جاري التحميل...',
-        notFound: 'لم يتم العثور على بيانات لهذه النخلة.',
-        error: 'حدث خطأ في تحميل البيانات.',
-        id: 'رقم النخلة',
-        line: 'رقم الخط',
-        field: 'رقم الحوشة',
-        type: 'النوع',
-        status: 'الحالة',
-        infected: 'مصابة ❌',
-        healthy: 'غير مصابة ✅',
-        companyName: 'الهناء للتنمية الزراعية',
-        companyDesc: 'AL HANAA For Agricultural Development'
-      },
-      en: {
-        title: 'Palm Tree Details 🌴',
-        loading: 'Loading...',
-        notFound: 'No data found for this palm tree.',
-        error: 'An error occurred while loading data.',
-        id: 'Tree ID',
-        line: 'Line Number',
-        field: 'Field',
-        type: 'Type',
-        status: 'Status',
-        infected: 'Infected ❌',
-        healthy: 'Healthy ✅',
-        companyName: 'Al Hanaa Agricultural Dev.',
-        companyDesc: 'Elmorshedy farms'
-      }
-    };
 
     async function fetchTreeData() {
       try {
         const response = await fetch('trees.json');
         const data = await response.json();
         const tree = data[treeId];
-        const container = document.getElementById('tree-details');
+        const tableBody = document.getElementById('tree-table');
 
         if (tree) {
-          container.innerHTML = `
-            <p><strong>${t('id')}:</strong> ${treeId}</p>
-            <p><strong>${t('line')}:</strong> ${tree.line}</p>
-            <p><strong>${t('field')}:</strong> ${tree.field}</p>
-            <p><strong>${t('type')}:</strong> ${tree.type}</p>
-            <p><strong>${t('status')}:</strong> ${tree.infected ? t('infected') : t('healthy')}</p>
-          `;
+          tableBody.innerHTML = Object.entries(tree).map(([key, value]) => {
+            let displayKey = lang === 'en' ? (translations[key] || key) : key;
+            let displayValue = value;
+
+            if (typeof value === 'string' && translations[value]) {
+              displayValue = lang === 'en' ? translations[value] : value;
+            }
+
+            if (key.includes('حالة العقد') && value === '0%') {
+              displayValue = '-';
+            }
+
+            let statusClass = '';
+            if (typeof value === 'string' && statusClasses[displayValue]) {
+              statusClass = statusClasses[displayValue];
+            } else if (key.includes('ملاحظات') && value && !statusClass) {
+              statusClass = 'status-healthy';
+            }
+
+            return `
+              <tr>
+                <td class="py-2 px-4 font-semibold text-green-700 dark:text-yellow-300 table-cell border-b border-gray-300">${displayKey}</td>
+                <td class="py-2 px-4 table-cell border-b border-gray-300 ${statusClass}">${displayValue ?? '-'}</td>
+              </tr>
+            `;
+          }).join('');
         } else {
-          container.innerHTML = `<p class="text-red-600">${t('notFound')}</p>`;
+          tableBody.innerHTML = `<tr><td colspan="2" class="text-red-600 py-4">${lang === 'ar' ? 'لم يتم العثور على بيانات لهذه النخلة.' : 'No data found for this palm tree.'}</td></tr>`;
         }
       } catch (error) {
-        document.getElementById('tree-details').innerHTML = `<p class="text-red-600">${t('error')}</p>`;
+        document.getElementById('tree-table').innerHTML = `<tr><td colspan="2" class="text-red-600 py-4">${lang === 'ar' ? 'حدث خطأ في تحميل البيانات.' : 'Error loading data.'}</td></tr>`;
       }
     }
 
@@ -126,18 +159,14 @@
       document.getElementById('modeToggle').innerText = isDark ? '☀️' : '🌙';
     }
 
-    function t(key) {
-      return translations[lang][key];
-    }
-
     function switchLanguage(selectedLang) {
       lang = selectedLang;
       document.documentElement.lang = lang;
       document.body.dir = lang === 'ar' ? 'rtl' : 'ltr';
 
-      document.getElementById('company-name').innerText = t('companyName');
-      document.getElementById('company-desc').innerText = t('companyDesc');
-      document.getElementById('page-title').innerText = t('title');
+      document.getElementById('company-name').innerText = lang === 'ar' ? 'الهناء للتنمية الزراعية' : 'Al Hanaa Agricultural Dev.';
+      document.getElementById('company-desc').innerText = lang === 'ar' ? 'AL HANAA For Agricultural Development' : 'Grow with care and science';
+      document.getElementById('page-title').innerText = lang === 'ar' ? 'تفاصيل النخلة 🌴' : 'Palm Tree Details 🌴';
 
       fetchTreeData();
     }
