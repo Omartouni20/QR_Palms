@@ -7,38 +7,117 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script> <!-- مكتبة QR -->
   <style>
-    body {
-      font-family: 'Cairo', sans-serif;
-      transition: background 0.3s, color 0.3s;
+    body, header, main, table, td, th, button, select {
+      transition: background-color 0.3s, color 0.3s;
     }
+
+    /* الوضع الداكن */
     .dark-mode {
       background-color: #0f172a;
       color: #f1f5f9;
     }
+
+    .dark-mode header {
+      background-color: #1e293b;
+    }
+
+    .dark-mode table {
+      background-color: #374151;
+      border-color: #4b5563;
+    }
+
+    .dark-mode .table-cell {
+      color: #f1f5f9;
+    }
+
+    .dark-mode .status-healthy {
+      color: lightgreen;
+    }
+
+    .dark-mode .status-infected {
+      color: lightcoral;
+    }
+
+    .dark-mode .status-testing {
+      color: goldenrod;
+    }
+
+    .dark-mode button {
+      background-color: #374151;
+      color: #f1f5f9;
+    }
+
+    .dark-mode select {
+      background-color: #374151;
+      color: #f1f5f9;
+    }
+
+    /* الوضع الفاتح */
     .light-mode {
       background-color: #ffffff;
       color: #0f172a;
     }
+
+    .light-mode header {
+      background-color: #f1f5f9;
+    }
+
+    .light-mode table {
+      background-color: #ffffff;
+      border-color: #e5e7eb;
+    }
+
+    .light-mode .table-cell {
+      color: #0f172a;
+    }
+
+    .light-mode .status-healthy {
+      color: green;
+    }
+
+    .light-mode .status-infected {
+      color: red;
+    }
+
+    .light-mode .status-testing {
+      color: orange;
+    }
+
+    .light-mode button {
+      background-color: #f1f5f9;
+      color: #0f172a;
+    }
+
+    .light-mode select {
+      background-color: #f1f5f9;
+      color: #0f172a;
+    }
+
     .table-cell:hover {
       background-color: #facc15;
       color: #000;
       transition: all 0.3s ease;
     }
+
     .field-label {
       font-weight: bold;
     }
+
     .status-healthy {
       color: green;
       font-weight: bold;
     }
+
     .status-infected {
       color: red;
       font-weight: bold;
     }
+
     .status-testing {
       color: orange;
       font-weight: bold;
     }
+
     table {
       border: 2px solid #ccc;
       border-radius: 10px;
@@ -76,10 +155,10 @@
     </div>
 
     <!-- هنا يظهر الـ QR -->
-    <div class="flex flex-col items-center mt-8">
+    <!--<div class="flex flex-col items-center mt-8">
       <div id="qrcode"></div>
       <p class="mt-4 text-green-700 dark:text-yellow-300 text-lg font-semibold">Scan Me 📱</p>
-    </div>
+    </div>-->
   </main>
 
   <script>
@@ -160,38 +239,36 @@
 
     function toggleDarkMode() {
       const body = document.getElementById('body');
+      const mode = isDark ? 'light-mode' : 'dark-mode';
+      const oppositeMode = isDark ? 'dark-mode' : 'light-mode';
+
       isDark = !isDark;
-      body.classList.toggle('dark-mode', isDark);
-      body.classList.toggle('light-mode', !isDark);
+      body.classList.remove(oppositeMode);
+      body.classList.add(mode);
+
       document.getElementById('modeToggle').innerText = isDark ? '☀️' : '🌙';
     }
 
-    function switchLanguage(selectedLang) {
-      lang = selectedLang;
-      document.documentElement.lang = lang;
-      document.body.dir = lang === 'ar' ? 'rtl' : 'ltr';
-
-      document.getElementById('company-name').innerText = lang === 'ar' ? 'الهناء للتنمية الزراعية' : 'Al Hanaa Agricultural Dev.';
-      document.getElementById('company-desc').innerText = lang === 'ar' ? 'AL HANAA For Agricultural Development' : 'Grow with care and science';
-      document.getElementById('page-title').innerText = lang === 'ar' ? 'تفاصيل النخلة 🌴' : 'Palm Tree Details 🌴';
-
+    function switchLanguage(language) {
+      lang = language;
       fetchTreeData();
     }
 
-    function generateQRCode() {
-      const currentUrl = window.location.href;
-      new QRCode(document.getElementById("qrcode"), {
-        text: currentUrl,
-        width: 150,
-        height: 150,
-        colorDark: "#000000",
-        colorLight: "#ffffff",
-        correctLevel: QRCode.CorrectLevel.H
+    function generateQRCode(treeId) {
+      const qrcode = new QRCode(document.getElementById("qrcode"), {
+        text: treeId,
+        width: 128,
+        height: 128,
+        colorDark : "#000000",
+        colorLight : "#ffffff",
+        correctLevel : QRCode.CorrectLevel.H
       });
     }
 
-    fetchTreeData();
-    generateQRCode(); // توليد الـ QR بمجرد تحميل الصفحة
+    window.onload = function() {
+      fetchTreeData();
+      generateQRCode(treeId);
+    };
   </script>
 </body>
 </html>

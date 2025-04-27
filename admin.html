@@ -3,8 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Palm Dashboard | لوحة تحكم النخل</title>
+  <title>لوحة تحكم النخلات | Palm Tree Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/0.4.1/html2canvas.min.js"></script>
   <style>
     body {
       font-family: 'Cairo', sans-serif;
@@ -18,64 +20,51 @@
       background-color: #ffffff;
       color: #0f172a;
     }
+    .table-cell:hover {
+      background-color: #facc15;
+      color: #000;
+      transition: all 0.3s ease;
+    }
+    .field-label {
+      font-weight: bold;
+    }
+    .status-healthy {
+      color: green;
+      font-weight: bold;
+    }
+    .status-infected {
+      color: red;
+      font-weight: bold;
+    }
+    .status-testing {
+      color: orange;
+      font-weight: bold;
+    }
     table {
-      border-collapse: collapse;
-      width: 100%;
+      border: 2px solid #ccc;
+      border-radius: 10px;
+      overflow: hidden;
     }
-    th, td {
-      border: 1px solid;
+    .light-mode table {
+      background-color: #f9fafb;
+      color: #111827;
     }
-    .dark-mode table,
-    .dark-mode td,
-    .dark-mode th {
-      background-color: #1e293b;
-      color: #f8fafc;
-      border-color: #334155;
+    .dark-mode table {
+      background-color: #1f2937;
+      color: #d1d5db;
     }
-    .dark-mode thead {
-      background-color: #2dd4bf;
-      color: #0f172a;
+    .light-mode th, .light-mode td {
+      border-color: #ddd;
     }
-    .light-mode table,
-    .light-mode td,
-    .light-mode th {
-      background-color: #ffffff;
-      color: #1e293b;
-      border-color: #cbd5e1;
-    }
-    .light-mode thead {
-      background-color: #ccfbf1;
-      color: #047857;
-    }
-    .light-mode header,
-    .light-mode main {
-      background-color: #ffffff !important;
-    }
-    .dark-mode header,
-    .dark-mode main {
-      background-color: #0f172a !important;
-    }
-    /* Loading Spinner */
-    .spinner {
-      border: 4px solid #f3f3f3;
-      border-top: 4px solid #3498db;
-      border-radius: 50%;
-      width: 50px;
-      height: 50px;
-      animation: spin 2s linear infinite;
-      margin: auto;
-    }
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
+    .dark-mode th, .dark-mode td {
+      border-color: #4b5563;
     }
   </style>
 </head>
-<body class="min-h-screen transition-colors duration-300 light-mode" dir="rtl" id="body">
-  <!-- Navbar -->
+<body class="min-h-screen light-mode" dir="rtl" id="body">
   <header class="shadow-md py-4 px-6 flex justify-between items-center">
     <div class="flex items-center space-x-4 space-x-reverse">
-      <img src="44da9ae8-2149-455f-9d8d-24a06d2dd97b.jpeg" alt="شعار الهناء" class="w-12 h-12 rounded-full border border-green-500">
+      <img src="./WhatsApp Image 2024-04-18 at 12.25.39.jpeg" alt="شعار الهناء" class="w-12 h-12 rounded-full border border-green-500">
       <div>
         <h1 class="text-xl font-bold text-green-700 dark:text-yellow-400" id="company-name">الهناء للتنمية الزراعية</h1>
         <p class="text-sm text-gray-500 dark:text-gray-300" id="company-desc">AL HANAA For Agricultural Development</p>
@@ -90,124 +79,113 @@
     </div>
   </header>
 
-  <!-- Main Content -->
-  <main class="p-6">
-    <h2 id="page-title" class="text-3xl font-bold text-green-700 dark:text-yellow-300 mb-6 text-center">لوحة تحكم النخل 🌴</h2>
-
-    <!-- Search & Filter -->
-    <div class="flex flex-col sm:flex-row gap-4 items-center justify-center mb-6">
-      <input type="text" id="searchInput" oninput="filterTrees()" placeholder="🔍 ابحث برقم أو نوع أو حالة..." class="px-4 py-2 rounded border w-full sm:w-1/3">
-    </div>
-
-    <!-- Loading Spinner -->
-    <div id="loading" class="flex justify-center mb-6">
-      <div class="spinner"></div>
-    </div>
-
-    <div class="overflow-x-auto rounded-xl shadow p-4">
-      <table class="min-w-full text-sm text-right">
-        <thead id="table-header">
-          <!-- Headers will be dynamically inserted here -->
-        </thead>
-        <tbody id="table-body" class="text-gray-700 dark:text-gray-200">
-          <!-- Data rows will be inserted here -->
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Download All QR Codes Button -->
-    <div class="flex justify-center mt-6">
-      <button id="download-all" onclick="downloadAllQRCodes()" class="bg-green-600 text-white px-4 py-2 rounded-lg">تحميل جميع أكواد QR</button>
+  <main class="flex items-center justify-center p-6 flex-col">
+    <div class="w-full md:w-4/3 text-right mt-10">
+      <h2 id="page-title" class="text-3xl font-bold text-green-700 dark:text-yellow-300 mb-6 text-center">لوحة تحكم النخيل 🌴</h2>
+      <div id="palm-tree-table" class="overflow-x-auto">
+        <table class="table-auto w-full text-right rounded-xl shadow-lg">
+          <thead>
+            <tr>
+              <th class="py-2 px-4 font-semibold text-green-700 dark:text-yellow-500">رقم النخلة</th>
+              <th class="py-2 px-4 font-semibold text-green-700 dark:text-yellow-500">رقم الخط</th>
+              <th class="py-2 px-4 font-semibold text-green-700 dark:text-yellow-500">محبس</th>
+              <th class="py-2 px-4 font-semibold text-green-500 dark:text-yellow-500">الصنف/تاريخ الزراعة</th>
+              <th class="py-2 px-4 font-semibold text-green-500 dark:text-yellow-500">حالة العقد 2018</th>
+              <th class="py-2 px-4 font-semibold text-green-500 dark:text-yellow-500">حالة العقد 2019</th>
+              <th class="py-2 px-4 font-semibold text-green-500 dark:text-yellow-500">حالة العقد 2020</th>
+              <th class="py-2 px-4 font-semibold text-green-500 dark:text-yellow-500">ملاحظات 2020</th>
+              <th class="py-2 px-4 font-semibold text-green-500 dark:text-yellow-500">حالة العقد 2021</th>
+              <th class="py-2 px-4 font-semibold text-green-500 dark:text-yellow-500">ملاحظات 2021</th>
+              <th class="py-2 px-4 font-semibold text-green-500 dark:text-yellow-500">حالة العقد 2022</th>
+              <th class="py-2 px-4 font-semibold text-green-500 dark:text-yellow-500">ملاحظات 2022</th>
+              <th class="py-2 px-4 font-semibold text-green-500 dark:text-yellow-500">حالة العقد 2023</th>
+              <th class="py-2 px-4 font-semibold text-green-500 dark:text-yellow-500">ملاحظات 2023</th>
+              <th class="py-2 px-4 font-semibold text-green-500 dark:text-yellow-500">توليد QR</th>
+            </tr>
+          </thead>
+          <tbody id="palm-table-body" class="text-lg">
+          </tbody>
+        </table>
+      </div>
     </div>
   </main>
 
   <script>
     let lang = 'ar';
     let isDark = false;
-    let allData = {};
-    let currentData = {};
 
-    async function loadAllTrees() {
+    const translations = {
+      "خط": "Line",
+      "نخلة": "Palm Tree",
+      "المحبس": "Valve",
+      "حالة العقد 2018": "Contract Status 2018",
+      "حالة العقد 2019": "Contract Status 2019",
+      "حالة العقد 2020": "Contract Status 2020",
+      "ملاحظات 2020": "Notes 2020",
+      "حالة العقد 2021": "Contract Status 2021",
+      "ملاحظات 2021": "Notes 2021",
+      "حالة العقد 2022": "Contract Status 2022",
+      "ملاحظات 2022": "Notes 2022",
+      "حالة العقد 2023": "Contract Status 2023",
+      "ملاحظات 2023": "Notes 2023"
+    };
+
+    async function fetchPalmData() {
       try {
         const response = await fetch('trees.json');
         const data = await response.json();
-        allData = data;
-        currentData = data;
-        renderTable(data);
-        document.getElementById('loading').style.display = 'none'; // Hide loading spinner once data is loaded
+
+        const palmTableBody = document.getElementById('palm-table-body');
+        palmTableBody.innerHTML = Object.entries(data).map(([id, tree]) => {
+          const qrCodeContainerId = `qrcode-${id}`;
+          const treeUrl = `https://omartouni20.github.io/QR_Palms/?id=${id}`;
+          
+          return `
+            <tr>
+              <td class="py-2 px-4 border-b">${tree["نخلة"]}</td>
+              <td class="py-2 px-4 border-b">${tree["خط"]}</td>
+              <td class="py-2 px-4 border-b">${tree["محبس"]}</td>
+              <td class="py-2 px-4 border-b">${tree["الصنف/تاريخ الزراعة"]}</td>
+              <td class="py-2 px-4 border-b">${tree["حالة العقد 2018"]}</td>
+              <td class="py-2 px-4 border-b">${tree["حالة العقد 2019"]}</td>
+              <td class="py-2 px-4 border-b">${tree["حالة العقد 2020"]}</td>
+              <td class="py-2 px-4 border-b">${tree["ملاحظات 2020"] || 'لا توجد ملاحظات'}</td>
+              <td class="py-2 px-4 border-b">${tree["حالة العقد 2021"]}</td>
+              <td class="py-2 px-4 border-b">${tree["ملاحظات 2021"] || 'لا توجد ملاحظات'}</td>
+              <td class="py-2 px-4 border-b">${tree["حالة العقد 2022"]}</td>
+              <td class="py-2 px-4 border-b">${tree["ملاحظات 2022"] || 'لا توجد ملاحظات'}</td>
+              <td class="py-2 px-4 border-b">${tree["حالة العقد 2023"]}</td>
+              <td class="py-2 px-4 border-b">${tree["ملاحظات 2023"] || 'لا توجد ملاحظات'}</td>
+              <td class="py-2 px-4 border-b">
+                <div id="${qrCodeContainerId}"></div>
+                <p class="text-center text-green-700 dark:text-yellow-700 font-semibold mt-2">Scan for ${tree["نخلة"]}</p>
+                <p class="text-center text-green-700 dark:text-yellow-700 mt-2">${tree["نخلة"]} - ${tree["خط"]} - ${tree["محبس"]}</p>
+                <button onclick="generateQRCode('${qrCodeContainerId}', '${tree["نخلة"]}', '${tree["خط"]}', '${tree["محبس"]}', '${treeUrl}')"
+                  class="mt-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
+                  توليد QR
+                </button>
+         
+              </td>
+            </tr>
+          `;
+        }).join('');
       } catch (error) {
-        document.getElementById('table-body').innerHTML = `<tr><td colspan="7" class="text-red-600 text-center p-4">${lang === 'ar' ? 'فشل في تحميل البيانات.' : 'Failed to load data.'}</td></tr>`;
+        console.error('Error fetching data:', error);
       }
     }
 
-    function generateQRCode(id) {
-      const qrCodeURL = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(id)}&size=100x100`;
-      return qrCodeURL;
-    }
-
-    function renderTable(data) {
-      const tbody = document.getElementById('table-body');
-      const thead = document.getElementById('table-header');
-      tbody.innerHTML = '';
-      thead.innerHTML = '';
-
-      if (!Object.keys(data).length) {
-        tbody.innerHTML = `<tr><td colspan="7" class="text-red-600 text-center p-4">${lang === 'ar' ? 'لا توجد بيانات مطابقة.' : 'No matching data found.'}</td></tr>`;
-        return;
+    function generateQRCode(containerId, id, line, valve, treeUrl) {
+      const qrCodeContainer = document.getElementById(containerId);
+      if (!qrCodeContainer.innerHTML.trim()) {
+        new QRCode(qrCodeContainer, {
+          text: treeUrl,
+          width: 150,
+          height: 150,
+          colorDark: "#000000",
+          colorLight: "#ffffff",
+          correctLevel: QRCode.CorrectLevel.H
+        });
       }
-
-      // Create table header dynamically
-      const firstRow = Object.values(data)[0]; // Get the first object to get the keys
-      const headerRow = Object.keys(firstRow).map(key => `<th class="p-2">${key}</th>`).join('');
-      thead.innerHTML = `<tr>${headerRow}<th class="p-2">QR Code</th><th class="p-2">تحميل QR</th></tr>`;
-
-      // Create table rows dynamically
-      Object.entries(data).forEach(([id, tree]) => {
-        const qrCodeURL = generateQRCode(id);
-        const row = `
-          <tr class="border-b border-gray-200 dark:border-gray-700">
-            ${Object.values(tree).map(value => `<td class="p-2">${value ?? '—'}</td>`).join('')}
-            <td class="p-2"><img src="${qrCodeURL}" alt="QR Code" class="w-16 h-16 rounded"></td>
-            <td class="p-2">
-              <button onclick="downloadQRCode('${id}')" class="bg-blue-600 text-white px-4 py-2 rounded-lg">تحميل QR</button>
-              <div id="qr-details-${id}" class="mt-2 hidden text-sm text-gray-700 dark:text-gray-300">
-                <p><strong>ID:</strong> ${tree.id}</p>
-                <p><strong>Line:</strong> ${tree.line}</p>
-                <p><strong>Field:</strong> ${tree.field}</p>
-                <p><strong>Type:</strong> ${tree.type}</p>
-                <p><strong>Infected:</strong> ${tree.infected ? 'نعم' : 'لا'}</p>
-              </div>
-            </td>
-          </tr>
-        `;
-        tbody.innerHTML += row;
-      });
-    }
-
-    function downloadQRCode(id) {
-      const qrCodeURL = generateQRCode(id);
-      const a = document.createElement('a');
-      a.href = qrCodeURL;
-      a.download = `${id}-QRCode.png`;
-      a.click();
-      
-      // Show tree details under QR code
-      const detailsDiv = document.getElementById(`qr-details-${id}`);
-      detailsDiv.classList.toggle('hidden');
-    }
-
-    function downloadAllQRCodes() {
-      Object.keys(allData).forEach(id => {
-        downloadQRCode(id);
-      });
-    }
-
-    function switchLanguage(selectedLang) {
-      lang = selectedLang;
-      document.documentElement.lang = lang;
-      document.body.dir = lang === 'ar' ? 'rtl' : 'ltr';
-
-      renderTable(currentData);
     }
 
     function toggleDarkMode() {
@@ -215,20 +193,44 @@
       isDark = !isDark;
       body.classList.toggle('dark-mode', isDark);
       body.classList.toggle('light-mode', !isDark);
-      document.getElementById('modeToggle').innerText = isDark ? '☀️' : '🌙';
+      document.getElementById('modeToggle').textContent = isDark ? '☀️' : '🌙';
     }
 
-    function filterTrees() {
-      const search = document.getElementById('searchInput').value.trim().toLowerCase();
-      const filtered = Object.fromEntries(Object.entries(allData).filter(([id, tree]) => {
-        return id.includes(search) ||
-          Object.values(tree).some(value => value.toString().toLowerCase().includes(search));
-      }));
-      currentData = filtered;
-      renderTable(filtered);
-    }
+//    async function downloadQRCodeWithDetails(containerId) {
+//  const qrCodeElement = document.getElementById(containerId);
+//  
+//  if (!qrCodeElement) {
+//    console.error("QR Code element not found!");
+//    return;
+//  }
+//
+//  try {
+//    // محاولة تحميل الكائن باستخدام html2canvas مع تفعيل useCORS
+//    const canvas = await html2canvas(qrCodeElement, { logging: true, useCORS: true });
+//    
+//    // تحقق من الكائن الناتج
+//    console.log("Canvas object:", canvas);
+//    
+//    // تحقق مما إذا كان الكائن Canvas صالحًا
+//    if (canvas && canvas instanceof HTMLCanvasElement && typeof canvas.toDataURL === 'function') {
+//      const imgData = canvas.toDataURL('image/png');
+//      console.log("Generated image data:", imgData);
+//      
+//      // إنشاء رابط لتحميل الصورة
+//      const link = document.createElement('a');
+//      link.href = imgData;
+//      link.download = 'QRCode_with_details.png';
+//      link.click();
+//    } else {
+//      console.error("Canvas is invalid or does not support toDataURL.");
+//    }
+//  } catch (err) {
+//    console.error("Error generating canvas:", err);
+//  }
+//}
 
-    loadAllTrees();
+
+    fetchPalmData(); // Fetch and display palm tree data on page load.
   </script>
 </body>
 </html>
